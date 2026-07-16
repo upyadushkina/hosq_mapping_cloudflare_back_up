@@ -487,7 +487,7 @@
       z-index: 250;
       display: none;
       padding: 50px;
-      pointer-events: auto;
+      pointer-events: none;
       box-sizing: content-box;
     }
 
@@ -500,6 +500,7 @@
       left: auto;
       top: auto;
       display: block;
+      pointer-events: auto;
     }
 
     .popup img {
@@ -787,10 +788,7 @@
         .attr('fill', d => getNodeColor(d, data))
         .attr('stroke', null)
         .attr('stroke-width', null)
-        .style('pointer-events', d => {
-          if (d.id.startsWith('artist::')) return 'all';
-          return featuresOn ? 'all' : 'none';
-        });
+        .style('pointer-events', d => nodePointerEvents(d));
 
       applySearchHighlight(searchInput.value);
     }
@@ -1025,6 +1023,12 @@
       return featuresOn ? 1 : 0;
     }
 
+    function nodePointerEvents(d) {
+      if (baseNodeOpacity(d) === 0) return 'none';
+      if (d.id.startsWith('artist::')) return 'all';
+      return featuresOn ? 'all' : 'none';
+    }
+
     function applySearchHighlight(query) {
       if (!graphCtx) return;
       const { node, link, labels, data } = graphCtx;
@@ -1044,9 +1048,14 @@
       node
         .attr('stroke', null)
         .attr('stroke-width', null)
-        .attr('opacity', opacityFor);
+        .attr('opacity', opacityFor)
+        .style('pointer-events', d => nodePointerEvents(d));
 
-      if (labels) labels.attr('opacity', opacityFor);
+      if (labels) {
+        labels
+          .attr('opacity', opacityFor)
+          .style('pointer-events', 'none');
+      }
 
       link
         .attr('opacity', () => {
@@ -1350,7 +1359,8 @@
 
       graphCtx.popupNode = featureNode;
       node.attr('display', n => allVisible.has(n.id) ? null : 'none')
-          .attr('opacity', n => firstDegree.has(n.id) || n.id === featureId ? 1 : 0.1);
+          .attr('opacity', n => firstDegree.has(n.id) || n.id === featureId ? 1 : 0.1)
+          .style('pointer-events', n => allVisible.has(n.id) ? nodePointerEvents(n) : 'none');
       link.attr('display', l => allVisible.has(l.source.id) && allVisible.has(l.target.id) ? null : 'none')
           .attr('stroke', l => (l.source.id === featureId || l.target.id === featureId) ? HIGHLIGHT : EDGE)
           .attr('opacity', l => (l.source.id === featureId || l.target.id === featureId) ? 1 : 0.1);
@@ -1390,7 +1400,13 @@
       const height = svg.node().clientHeight;
       const g = svg.append('g');
 
-      const zoom = d3.zoom().scaleExtent([0.2, 4]).on('zoom', (event) => {
+      const zoom = d3.zoom().scaleExtent([0.2, 4])
+        .filter((event) => {
+          if (event.type === 'wheel') return true;
+          const target = event.target;
+          return !(target && target.classList && target.classList.contains('node'));
+        })
+        .on('zoom', (event) => {
         g.attr('transform', event.transform);
         savedZoomTransform = event.transform;
         if (graphCtx && graphCtx.popupNode) updatePopupPosition(graphCtx.popupNode, svg);
@@ -1459,7 +1475,9 @@
         .enter().append('circle')
         .attr('r', NODE_RADIUS)
         .attr('fill', d => d.color)
-        .attr('class', 'node');
+        .attr('class', 'node')
+        .style('cursor', 'pointer')
+        .style('pointer-events', d => nodePointerEvents(d));
 
       const labels = g.append('g')
         .attr('class', 'labels')
@@ -1471,19 +1489,30 @@
         .attr('text-anchor', 'middle')
         .attr('dy', LABEL_OFFSET_Y)
         .attr('fill', TEXT)
-        .attr('pointer-events', 'none')
+        .style('pointer-events', 'none')
         .style('font-family', 'Lexend, sans-serif')
         .style('font-weight', '500');
 
+      node.filter(d => d.id.startsWith('artist::')).raise();
+      labels.raise();
+
       const dragBehavior = d3.drag()
         .on('start', function(event, d) {
+          if (event.sourceEvent) event.sourceEvent.stopPropagation();
           if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x; d.fy = d.y;
+          d.fx = d.x;
+          d.fy = d.y;
         })
-        .on('drag', function(event, d) { d.fx = event.x; d.fy = event.y; })
+        .on('drag', function(event, d) {
+          if (event.sourceEvent) event.sourceEvent.stopPropagation();
+          d.fx = event.x;
+          d.fy = event.y;
+        })
         .on('end', function(event, d) {
+          if (event.sourceEvent) event.sourceEvent.stopPropagation();
           if (!event.active) simulation.alphaTarget(0);
-          d.fx = null; d.fy = null;
+          d.fx = null;
+          d.fy = null;
         });
 
       node.call(dragBehavior)
@@ -1548,7 +1577,8 @@
             });
             const allVisible = new Set([d.id, ...firstDegree, ...secondDegree]);
             node.attr('display', n => allVisible.has(n.id) ? null : 'none')
-                .attr('opacity', n => firstDegree.has(n.id) || n.id === d.id ? 1 : 0.5);
+                .attr('opacity', n => firstDegree.has(n.id) || n.id === d.id ? 1 : 0.5)
+                .style('pointer-events', n => allVisible.has(n.id) ? nodePointerEvents(n) : 'none');
             labels.attr('display', n => allVisible.has(n.id) ? null : 'none')
                   .attr('opacity', n => firstDegree.has(n.id) || n.id === d.id ? 1 : 0.5);
             link.attr('display', l => allVisible.has(l.source.id) && allVisible.has(l.target.id) ? null : 'none');
