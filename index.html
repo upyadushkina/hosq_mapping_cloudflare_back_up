@@ -728,6 +728,9 @@
     let featuresOn = false;
     let pendingFocusFeatureId = null;
     let graphCtx = null;
+    let focusedNodeId = null;
+    let focusedVisibleNodeIds = null;
+    let filteredTagNodeIds = null;
     let allFilterTags = [];
     let selectedFiltersMap = null;
 
@@ -811,9 +814,23 @@
       const resetFocus = options.resetFocus;
 
       if (resetFocus) {
+        focusedNodeId = null;
+        focusedVisibleNodeIds = null;
         node.attr('display', null);
         link.attr('display', null);
         if (labels) labels.attr('display', null);
+        link.attr('stroke', EDGE);
+      } else if (focusedNodeId && focusedVisibleNodeIds) {
+        node.attr('display', d => focusedVisibleNodeIds.has(d.id) ? null : 'none');
+        if (labels) labels.attr('display', d => focusedVisibleNodeIds.has(d.id) ? null : 'none');
+        link
+          .attr('display', l => {
+            const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+            const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+            return sourceId === focusedNodeId || targetId === focusedNodeId ? null : 'none';
+          })
+          .attr('stroke', HIGHLIGHT);
+      } else {
         link.attr('stroke', EDGE);
       }
 
@@ -1060,11 +1077,15 @@
     }
 
     function baseNodeOpacity(d) {
+      if (focusedVisibleNodeIds) return focusedVisibleNodeIds.has(d.id) ? 1 : 0;
+      if (filteredTagNodeIds?.has(d.id)) return 1;
       if (d.id.startsWith('artist::')) return 1;
       return featuresOn ? 1 : 0;
     }
 
     function nodePointerEvents(d) {
+      if (focusedVisibleNodeIds) return focusedVisibleNodeIds.has(d.id) ? 'all' : 'none';
+      if (filteredTagNodeIds?.has(d.id)) return 'all';
       if (baseNodeOpacity(d) === 0) return 'none';
       if (d.id.startsWith('artist::')) return 'all';
       return featuresOn ? 'all' : 'none';
@@ -1100,6 +1121,8 @@
 
       link
         .attr('opacity', () => {
+          if (focusedNodeId) return searching ? dim : 1;
+          if (filteredTagNodeIds) return searching ? dim : 1;
           if (!featuresOn) return 0;
           if (!searching) return 1;
           return dim;
@@ -1109,7 +1132,7 @@
       if (q.length > 0 && matches.size === 0) {
         node.attr('opacity', d => baseNodeOpacity(d));
         if (labels) labels.attr('opacity', d => baseNodeOpacity(d));
-        link.attr('opacity', featuresOn ? 1 : 0);
+        link.attr('opacity', focusedNodeId || filteredTagNodeIds || featuresOn ? 1 : 0);
       }
     }
 
@@ -1449,32 +1472,47 @@
       }
     }
 
-    function applyFeatureFocus(featureId) {
+    function applyNodeFocus(nodeId, options = {}) {
       if (!graphCtx) return;
-      const { node, link, labels, linksData, svg } = graphCtx;
-      const featureNode = node.data().find(n => n.id === featureId);
-      if (!featureNode) return;
+      const { node, linksData, svg } = graphCtx;
+      const focusedNode = node.data().find(n => n.id === nodeId);
+      if (!focusedNode) return;
 
-      const firstDegree = new Set();
+      const directNodeIds = new Set([nodeId]);
       linksData.forEach(l => {
-        if (l.source.id === featureId) firstDegree.add(l.target.id);
-        if (l.target.id === featureId) firstDegree.add(l.source.id);
+        const sourceId = typeof l.source === 'object' ? l.source.id : l.source;
+        const targetId = typeof l.target === 'object' ? l.target.id : l.target;
+        if (sourceId === nodeId) directNodeIds.add(targetId);
+        if (targetId === nodeId) directNodeIds.add(sourceId);
       });
-      const allVisible = new Set([featureId, ...firstDegree]);
 
-      graphCtx.popupNode = featureNode;
-      node.attr('display', n => allVisible.has(n.id) ? null : 'none')
-          .attr('opacity', n => firstDegree.has(n.id) || n.id === featureId ? 1 : 0.1)
-          .style('pointer-events', n => allVisible.has(n.id) ? nodePointerEvents(n) : 'none');
-      link.attr('display', l => allVisible.has(l.source.id) && allVisible.has(l.target.id) ? null : 'none')
-          .attr('stroke', l => (l.source.id === featureId || l.target.id === featureId) ? HIGHLIGHT : EDGE)
-          .attr('opacity', l => (l.source.id === featureId || l.target.id === featureId) ? 1 : 0.1);
-      if (labels) {
-        labels.attr('display', n => allVisible.has(n.id) ? null : 'none')
-              .attr('opacity', n => firstDegree.has(n.id) || n.id === featureId ? 1 : 0.5);
+      focusedNodeId = nodeId;
+      focusedVisibleNodeIds = directNodeIds;
+      graphCtx.popupNode = focusedNode;
+      applyFeaturesVisibility();
+
+      if (options.showPopup !== false) {
+        if (nodeId.startsWith('artist::')) {
+          showArtistPopup(focusedNode, graphCtx.data, svg);
+        } else {
+          showFeaturePopup(focusedNode, svg);
+        }
       }
+    }
 
-      showFeaturePopup(featureNode, svg);
+    function resetNodeFocus(options = {}) {
+      if (!graphCtx) return;
+      focusedNodeId = null;
+      focusedVisibleNodeIds = null;
+      graphCtx.node.attr('display', null);
+      if (graphCtx.labels) graphCtx.labels.attr('display', null);
+      graphCtx.link.attr('display', null).attr('stroke', EDGE);
+      applyFeaturesVisibility();
+      if (options.hidePopup) hidePopup();
+    }
+
+    function applyFeatureFocus(featureId) {
+      applyNodeFocus(featureId);
     }
 
     function selectFeatureFromCard(featureId) {
@@ -1494,6 +1532,9 @@
     }
 
     function renderGraph(data, selected) {
+      focusedNodeId = null;
+      focusedVisibleNodeIds = null;
+      filteredTagNodeIds = null;
       const svgEl = document.querySelector('svg');
       if (svgEl) {
         try { savedZoomTransform = d3.zoomTransform(svgEl); } catch (e) { /* ignore */ }
@@ -1536,14 +1577,24 @@
       const visibleArtistIds = new Set(
         Object.keys(data.artists).filter(a => artistPassesFilter(a, selected, artistLinksMap))
       );
+      const selectedTagIds = new Set();
+      Object.entries(selected || {}).forEach(([category, values]) => {
+        (values || []).forEach(value => selectedTagIds.add(`${category}::${value}`));
+      });
+      const hasSelectedTags = selectedTagIds.size > 0;
+      filteredTagNodeIds = hasSelectedTags ? new Set(selectedTagIds) : null;
       const visibleRelatedIds = new Set(visibleArtistIds);
 
-      data.links.forEach(l => {
-        const s = typeof l.source === 'string' ? l.source : l.source.id;
-        const t = typeof l.target === 'string' ? l.target : l.target.id;
-        if (visibleArtistIds.has(s)) visibleRelatedIds.add(t);
-        if (visibleArtistIds.has(t)) visibleRelatedIds.add(s);
-      });
+      if (hasSelectedTags) {
+        selectedTagIds.forEach(id => visibleRelatedIds.add(id));
+      } else {
+        data.links.forEach(l => {
+          const s = typeof l.source === 'string' ? l.source : l.source.id;
+          const t = typeof l.target === 'string' ? l.target : l.target.id;
+          if (visibleArtistIds.has(s)) visibleRelatedIds.add(t);
+          if (visibleArtistIds.has(t)) visibleRelatedIds.add(s);
+        });
+      }
 
       const nodes = data.nodes
         .filter(n => visibleRelatedIds.has(n.id))
@@ -1553,7 +1604,8 @@
       const links = data.links.filter(l => {
         const s = typeof l.source === 'string' ? l.source : l.source.id;
         const t = typeof l.target === 'string' ? l.target : l.target.id;
-        return nodeIdSet.has(s) && nodeIdSet.has(t);
+        if (!nodeIdSet.has(s) || !nodeIdSet.has(t)) return false;
+        return !hasSelectedTags || selectedTagIds.has(s) || selectedTagIds.has(t);
       }).map(l => ({ ...l }));
 
       const MIN_NODE_DISTANCE = NODE_RADIUS * 5;
@@ -1652,7 +1704,7 @@
 
       node.call(dragBehavior)
         .on('mouseover', function(event, d) {
-          if (!featuresOn && !d.id.startsWith('artist::')) return;
+          if (nodePointerEvents(d) === 'none') return;
           hoveringNode = true;
           clearTimeout(hidePopupTimer);
           graphCtx.popupNode = d;
@@ -1684,42 +1736,21 @@
         .on('mouseout', function() {
           hoveringNode = false;
           scheduleHidePopup();
-          if (featuresOn) {
+          if (featuresOn || focusedNodeId) {
             applyFeaturesVisibility();
-            link.attr('stroke', EDGE);
           }
         })
         .on('click', function(event, d) {
           event.stopPropagation();
-          if (!featuresOn && !d.id.startsWith('artist::')) return;
-          hoveringNode = true;
-          clearTimeout(hidePopupTimer);
-          graphCtx.popupNode = d;
-
-          if (d.id.startsWith('artist::')) {
-            showArtistPopup(d, data, svg);
-            if (!featuresOn) return;
-
-            const firstDegree = new Set();
-            const secondDegree = new Set();
-            links.forEach(l => {
-              if (l.source.id === d.id) firstDegree.add(l.target.id);
-              if (l.target.id === d.id) firstDegree.add(l.source.id);
-            });
-            links.forEach(l => {
-              if (firstDegree.has(l.source.id)) secondDegree.add(l.target.id);
-              if (firstDegree.has(l.target.id)) secondDegree.add(l.source.id);
-            });
-            const allVisible = new Set([d.id, ...firstDegree, ...secondDegree]);
-            node.attr('display', n => allVisible.has(n.id) ? null : 'none')
-                .attr('opacity', n => firstDegree.has(n.id) || n.id === d.id ? 1 : 0.5)
-                .style('pointer-events', n => allVisible.has(n.id) ? nodePointerEvents(n) : 'none');
-            labels.attr('display', n => allVisible.has(n.id) ? null : 'none')
-                  .attr('opacity', n => firstDegree.has(n.id) || n.id === d.id ? 1 : 0.5);
-            link.attr('display', l => allVisible.has(l.source.id) && allVisible.has(l.target.id) ? null : 'none');
+          if (nodePointerEvents(d) === 'none') return;
+          if (focusedNodeId === d.id) {
+            hoveringNode = false;
+            resetNodeFocus({ hidePopup: true });
             return;
           }
-          applyFeatureFocus(d.id);
+          hoveringNode = true;
+          clearTimeout(hidePopupTimer);
+          applyNodeFocus(d.id);
         });
 
       simulation.on('tick', () => {
@@ -1733,11 +1764,7 @@
       svg.on('click', () => {
         hoveringNode = false;
         hoveringPopup = false;
-        hidePopup();
-        node.attr('display', null).attr('stroke', null).attr('stroke-width', null);
-        labels.attr('display', null);
-        link.attr('display', null).attr('stroke', EDGE);
-        applyFeaturesVisibility();
+        resetNodeFocus({ hidePopup: true });
         searchInput.value = '';
         applySearchHighlight('');
       });
