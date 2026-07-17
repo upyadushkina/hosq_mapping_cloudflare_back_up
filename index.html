@@ -658,6 +658,7 @@
     const FEATURE_COLORS = {
       artist: '#5C5255',
       role: '#EAE2D6',
+      project: '#FFE2C4',
       discipline: '#F4A8B3',
       'skill set': '#ADC99E',
       tools: '#B8D5E7',
@@ -680,7 +681,9 @@
     const TEXT = '#EAE2D6';
     const NODE_RADIUS = 15;
     const LABEL_FONT_SIZE = 9;
-    const LABEL_OFFSET_Y = 12;
+    const NODE_HORIZONTAL_PADDING = 6;
+    const NODE_VERTICAL_PADDING = 3;
+    const NODE_CORNER_RADIUS = 4;
     let savedZoomTransform = null;
     let hidePopupTimer = null;
     let hoveringPopup = false;
@@ -972,6 +975,7 @@
       push(artist.city);
       push(artist.lab);
       push(artist.department);
+      push(artist.project);
       push(artist.discipline);
       push(artist.tools);
       push(artist.instruments);
@@ -980,7 +984,7 @@
       push(decodeAt(artist.telegram || ''));
       push(artist.email);
       push(artist.social);
-      ['discipline', 'tools', 'instruments', 'skill set', 'role'].forEach(key => {
+      ['project', 'discipline', 'tools', 'instruments', 'skill set', 'role'].forEach(key => {
         splitCsvTags(artist[key]).forEach(push);
       });
       return fields;
@@ -1088,7 +1092,7 @@
       applySearchHighlight(e.target.value);
     });
 
-    const DEFAULT_FILTER_ORDER = ['lab', 'department', 'role', 'discipline', 'instruments', 'tools', 'skill set'];
+    const DEFAULT_FILTER_ORDER = ['lab', 'department', 'role', 'project', 'discipline', 'instruments', 'tools', 'skill set'];
 
     function getFilterOrder(data) {
       if (data && Array.isArray(data.filter_order) && data.filter_order.length) {
@@ -1237,6 +1241,9 @@
       }
       if (artist.department) {
         html += `<div class="card-row"><span class="label">department:</span> <span class="value">${escapeHtml(artist.department)}</span></div>`;
+      }
+      if (artist.project) {
+        html += `<div class="card-row"><span class="label">projects:</span> ${renderClickableTags('project', artist.project)}</div>`;
       }
       if (artist.discipline) {
         html += `<div class="card-row"><span class="label">disciplines:</span> ${renderClickableTags('discipline', artist.discipline)}</div>`;
@@ -1470,12 +1477,13 @@
 
       const node = g.append('g')
         .attr('class', 'nodes')
-        .selectAll('circle')
+        .selectAll('rect')
         .data(nodes)
-        .enter().append('circle')
-        .attr('r', NODE_RADIUS)
+        .enter().append('rect')
         .attr('fill', d => d.color)
         .attr('class', 'node')
+        .attr('rx', NODE_CORNER_RADIUS)
+        .attr('ry', NODE_CORNER_RADIUS)
         .style('cursor', 'pointer')
         .style('pointer-events', d => nodePointerEvents(d));
 
@@ -1487,11 +1495,29 @@
         .text(d => getNodeLabel(d))
         .attr('font-size', LABEL_FONT_SIZE)
         .attr('text-anchor', 'middle')
-        .attr('dy', LABEL_OFFSET_Y)
+        .attr('dominant-baseline', 'middle')
         .attr('fill', TEXT)
         .style('pointer-events', 'none')
         .style('font-family', 'Lexend, sans-serif')
         .style('font-weight', '500');
+
+      function sizeNodeRectangles() {
+        labels.each(function(d) {
+          const textWidth = this.getComputedTextLength();
+          d.nodeWidth = Math.ceil(textWidth) + NODE_HORIZONTAL_PADDING * 2;
+          d.nodeHeight = LABEL_FONT_SIZE + NODE_VERTICAL_PADDING * 2;
+        });
+        node
+          .attr('width', d => d.nodeWidth)
+          .attr('height', d => d.nodeHeight)
+          .attr('x', d => (d.x || 0) - d.nodeWidth / 2)
+          .attr('y', d => (d.y || 0) - d.nodeHeight / 2);
+      }
+
+      sizeNodeRectangles();
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(sizeNodeRectangles);
+      }
 
       node.filter(d => d.id.startsWith('artist::')).raise();
       labels.raise();
@@ -1590,8 +1616,8 @@
       simulation.on('tick', () => {
         link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
             .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
-        node.attr('cx', d => d.x).attr('cy', d => d.y);
-        labels.attr('x', d => d.x).attr('y', d => d.y + LABEL_OFFSET_Y);
+        node.attr('x', d => d.x - d.nodeWidth / 2).attr('y', d => d.y - d.nodeHeight / 2);
+        labels.attr('x', d => d.x).attr('y', d => d.y);
         if (graphCtx && graphCtx.popupNode) updatePopupPosition(graphCtx.popupNode, svg);
       });
 
