@@ -482,6 +482,12 @@
       padding: 8px 12px;
     }
 
+    .popup.popup-project {
+      width: 260px;
+      max-width: min(260px, 80vw);
+      padding: 12px;
+    }
+
     .popup-wrap {
       position: absolute;
       z-index: 250;
@@ -561,6 +567,28 @@
     .popup .card-tag:active {
       color: #F4A8B3;
       text-decoration: none;
+      outline: none;
+    }
+
+    .popup .project-description {
+      margin: 8px 0;
+      color: #EAE2D6;
+      font-size: 12px;
+      line-height: 1.45;
+      text-align: left;
+      font-weight: 400;
+    }
+
+    .popup .curator-link {
+      color: #EAE2D6;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .popup .curator-link:hover,
+    .popup .curator-link:focus,
+    .popup .curator-link:active {
+      color: #F4A8B3;
       outline: none;
     }
 
@@ -679,8 +707,10 @@
     const HIGHLIGHT = '#F4A8B3';
     const EDGE = '#5C5255';
     const TEXT = '#EAE2D6';
+    const COLORED_NODE_TEXT = '#3B3033';
     const NODE_RADIUS = 15;
     const LABEL_FONT_SIZE = 9;
+    const NODE_LINE_HEIGHT = LABEL_FONT_SIZE;
     const NODE_HORIZONTAL_PADDING = 6;
     const NODE_VERTICAL_PADDING = 3;
     const NODE_CORNER_RADIUS = 4;
@@ -792,6 +822,7 @@
         .attr('stroke', null)
         .attr('stroke-width', null)
         .style('pointer-events', d => nodePointerEvents(d));
+      if (labels) labels.attr('fill', d => getNodeTextColor(d, data));
 
       applySearchHighlight(searchInput.value);
     }
@@ -841,6 +872,12 @@
       }
       if (!featuresOn) return getPersonColor(data.artists[node.id]);
       return FEATURE_COLORS.artist;
+    }
+
+    function getNodeTextColor(node, data) {
+      return getNodeColor(node, data).toUpperCase() === FEATURE_COLORS.artist.toUpperCase()
+        ? TEXT
+        : COLORED_NODE_TEXT;
     }
 
     function splitCsvTags(raw) {
@@ -1266,6 +1303,22 @@
       return html;
     }
 
+    function buildProjectCardHtml(projectNode) {
+      const curators = Array.isArray(projectNode.curators) ? projectNode.curators : [];
+      let html = `<strong class="card-title">${escapeHtml(getNodeLabel(projectNode))}</strong>`;
+      if (projectNode.description) {
+        html += `<div class="project-description">${escapeHtml(projectNode.description)}</div>`;
+      }
+      if (curators.length) {
+        const curatorLinks = curators.map((curator, index) => {
+          const separator = index < curators.length - 1 ? '<span class="card-sep">, </span>' : '';
+          return `<span class="curator-link" role="button" tabindex="0" data-artist-id="${escapeHtml(curator.artist_id)}">${escapeHtml(curator.name)}</span>${separator}`;
+        }).join('');
+        html += `<div class="card-row"><span class="label">curators:</span> ${curatorLinks}</div>`;
+      }
+      return html;
+    }
+
     function getNodeLabel(d) {
       return d.group === 'role' ? (formatRoleDisplay(d.label) || d.label) : d.label;
     }
@@ -1278,7 +1331,7 @@
       if (wrap) wrap.classList.remove('active');
       if (popup) {
         popup.style.display = 'none';
-        popup.classList.remove('popup-artist', 'popup-feature');
+        popup.classList.remove('popup-artist', 'popup-feature', 'popup-project');
       }
       if (graphCtx) graphCtx.popupNode = null;
     }
@@ -1321,7 +1374,7 @@
       clearTimeout(hidePopupTimer);
       hoveringNode = true;
       popup.classList.add('popup-artist');
-      popup.classList.remove('popup-feature');
+      popup.classList.remove('popup-feature', 'popup-project');
       popup.innerHTML = buildArtistCardHtml(artist);
       showPopupWrap();
       updatePopupPosition(d, svg);
@@ -1342,13 +1395,58 @@
     function showFeaturePopup(d, svg) {
       bindPopupInteractions();
       const popup = document.getElementById('popup');
+      const isProject = d.group === 'project';
       clearTimeout(hidePopupTimer);
       hoveringNode = true;
-      popup.classList.add('popup-feature');
+      popup.classList.toggle('popup-project', isProject);
+      popup.classList.toggle('popup-feature', !isProject);
       popup.classList.remove('popup-artist');
-      popup.innerHTML = `<div><strong>${escapeHtml(getNodeLabel(d))}</strong></div>`;
+      popup.innerHTML = isProject
+        ? buildProjectCardHtml(d)
+        : `<div><strong>${escapeHtml(getNodeLabel(d))}</strong></div>`;
       showPopupWrap();
       updatePopupPosition(d, svg);
+
+      if (isProject) {
+        popup.querySelectorAll('.curator-link').forEach(el => {
+          const openCurator = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const artistId = el.getAttribute('data-artist-id');
+            if (artistId) selectArtistFromProjectCard(artistId);
+          };
+          el.addEventListener('click', openCurator);
+          el.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') openCurator(event);
+          });
+        });
+      }
+    }
+
+    function selectArtistFromProjectCard(artistId, allowFilterReset = true) {
+      if (!graphCtx || !graphCtx.data.artists[artistId]) return;
+      let artistNode = graphCtx.node.data().find(n => n.id === artistId);
+      if (!artistNode && allowFilterReset) {
+        resetFilters();
+        requestAnimationFrame(() => selectArtistFromProjectCard(artistId, false));
+        return;
+      }
+      if (!artistNode) return;
+
+      applyFeaturesVisibility({ resetFocus: true });
+      const artistSelection = graphCtx.node.filter(n => n.id === artistId);
+      artistSelection.dispatch('click', { bubbles: true, cancelable: true });
+      artistSelection
+        .attr('display', null)
+        .attr('opacity', 1)
+        .attr('stroke', HIGHLIGHT)
+        .attr('stroke-width', 2)
+        .raise();
+      if (graphCtx.labels) {
+        graphCtx.labels.filter(n => n.id === artistId)
+          .attr('display', null)
+          .attr('opacity', 1);
+      }
     }
 
     function applyFeatureFocus(featureId) {
@@ -1492,20 +1590,31 @@
         .selectAll('text')
         .data(nodes)
         .enter().append('text')
-        .text(d => getNodeLabel(d))
         .attr('font-size', LABEL_FONT_SIZE)
         .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('fill', TEXT)
+        .attr('fill', d => getNodeTextColor(d, data))
         .style('pointer-events', 'none')
         .style('font-family', 'Lexend, sans-serif')
         .style('font-weight', '500');
 
+      labels.each(function(d) {
+        const words = getNodeLabel(d).trim().split(/\s+/).filter(Boolean);
+        d.nodeLineCount = Math.max(1, words.length);
+        const firstLineOffset = -((d.nodeLineCount - 1) * NODE_LINE_HEIGHT) / 2 + LABEL_FONT_SIZE * 0.35;
+        const text = d3.select(this);
+        (words.length ? words : ['']).forEach((word, index) => {
+          text.append('tspan')
+            .attr('x', 0)
+            .attr('dy', index === 0 ? firstLineOffset : NODE_LINE_HEIGHT)
+            .text(word);
+        });
+      });
+
       function sizeNodeRectangles() {
         labels.each(function(d) {
-          const textWidth = this.getComputedTextLength();
-          d.nodeWidth = Math.ceil(textWidth) + NODE_HORIZONTAL_PADDING * 2;
-          d.nodeHeight = LABEL_FONT_SIZE + NODE_VERTICAL_PADDING * 2;
+          const lineWidths = Array.from(this.querySelectorAll('tspan'), line => line.getComputedTextLength());
+          d.nodeWidth = Math.ceil(Math.max(0, ...lineWidths)) + NODE_HORIZONTAL_PADDING * 2;
+          d.nodeHeight = d.nodeLineCount * NODE_LINE_HEIGHT + NODE_VERTICAL_PADDING * 2;
         });
         node
           .attr('width', d => d.nodeWidth)
@@ -1617,7 +1726,7 @@
         link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
             .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
         node.attr('x', d => d.x - d.nodeWidth / 2).attr('y', d => d.y - d.nodeHeight / 2);
-        labels.attr('x', d => d.x).attr('y', d => d.y);
+        labels.attr('transform', d => `translate(${d.x},${d.y})`);
         if (graphCtx && graphCtx.popupNode) updatePopupPosition(graphCtx.popupNode, svg);
       });
 
