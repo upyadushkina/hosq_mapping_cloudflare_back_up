@@ -814,97 +814,245 @@
       "id": "project::Ambisonic Installation",
       "label": "Ambisonic Installation",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project brings together immersive audio experiences, spatial sound works, and experimental installations that expand the possibilities of listening.",
+      "curators": [
+        {
+          "name": "Kai Khachatryan",
+          "artist_id": "artist::Kai Khachatryan"
+        }
+      ]
     },
     {
       "id": "project::Art To Wear",
       "label": "Art To Wear",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project explores the body as an artistic medium through costume design, textiles, wearable art, jewelry, performance design, styling, craft-based practices, and interdisciplinary making.",
+      "curators": [
+        {
+          "name": "Venera Kazarova",
+          "artist_id": "artist::Venera Kazarova"
+        }
+      ]
     },
     {
       "id": "project::Assembling Ritual",
       "label": "Assembling Ritual",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project explores rituals through the intersections of art, science, technology, society, anthropology, philosophy, culture, and experimental research practices.",
+      "curators": [
+        {
+          "name": "Jeanne Kormina",
+          "artist_id": "artist::Jeanne Kormina"
+        }
+      ]
     },
     {
       "id": "project::Communitas",
       "label": "Communitas",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project explores the idea of rituals through traditional music practices, folk traditions, contemporary technologies, electronic approaches, and other forms of expression discovered along the way.",
+      "curators": [
+        {
+          "name": "Ben Wheeler",
+          "artist_id": "artist::Ben Wheeler"
+        },
+        {
+          "name": "Zhanna Davtyan",
+          "artist_id": "artist::Zhanna Davtyan"
+        }
+      ]
     },
     {
       "id": "project::Contemporary Art",
       "label": "Contemporary Art",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "Rituals of Matter. During the concerts, microscopic rituals of matter become live visuals: dissolving crystals, spreading pigments, microorganisms, liquids, and organic particles are captured in real time and transformed through Resolume into a reactive visual environment that evolves together with the music.",
+      "curators": [
+        {
+          "name": "Andronik Khachiian",
+          "artist_id": "artist::Andronik Khachiian"
+        }
+      ]
     },
     {
       "id": "project::Documental Art",
       "label": "Documental Art",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The documentary film Notations #2 will capture the inner life of the laboratory, following its production process from the initial creative sparks to the final showcase. Instead of a traditional format, the narrative places a sharp focus on the unique personal stories of the participants, crew, and curators.",
+      "curators": [
+        {
+          "name": "Artem Semenov",
+          "artist_id": "artist::Artem Semenov"
+        },
+        {
+          "name": "Evgeniy Sharakshane",
+          "artist_id": "artist::Evgeniy Sharakshane"
+        }
+      ]
     },
     {
       "id": "project::Installation",
       "label": "Installation",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project presents multimedia installations, audiovisual performances, and spatial interventions that transform the festival into a site of experimentation, interaction, and discovery.",
+      "curators": [
+        {
+          "name": "Nadya Xyxu",
+          "artist_id": "artist::Nadya Xyxu"
+        },
+        {
+          "name": "Misak Samokatian",
+          "artist_id": "artist::Misak Samokatian"
+        }
+      ]
     },
     {
       "id": "project::Music Production",
       "label": "Music Production",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The program showcases artists working across music, sound, technology, and performance, highlighting new approaches to listening, composition, and collective creation.",
+      "curators": [
+        {
+          "name": "Arman Peshtmaljyan",
+          "artist_id": "artist::Arman Peshtmaljyan"
+        },
+        {
+          "name": "Shahen Khandkaryan (Shhau)",
+          "artist_id": "artist::Shahen Khandkaryan (Shhau)"
+        }
+      ]
     },
     {
       "id": "project::Neo-Tribes",
       "label": "Neo-Tribes",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project explores the idea of rituals through jazz language, improvisation, groove, sound experimentation, electronic music, and other forms of expression discovered along the way.",
+      "curators": [
+        {
+          "name": "Tigran Suchyan",
+          "artist_id": "artist::Tigran Suchyan"
+        },
+        {
+          "name": "Mesrop Sarkisyan",
+          "artist_id": "artist::Mesrop Sarkisyan"
+        }
+      ]
     },
     {
       "id": "project::Reverse Tower Ritual",
       "label": "Reverse Tower Ritual",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "Reverse Tower is a ritual in which human signals become light and sound, creating an experience of cosmic perspective and temporarily dissolving the borders between people.",
+      "curators": [
+        {
+          "name": "Andriesh Gandrabur",
+          "artist_id": "artist::Andriesh Gandrabur"
+        }
+      ]
     },
     {
       "id": "project::Sama Soundbath",
       "label": "Sama Soundbath",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "A sacral listening space — a sound environment where music is experienced through silence, full-body immersion, and shared presence. The space is built around a high-quality sound system designed to be felt as much as heard: sound travels through the room and through the body.",
+      "curators": [
+        {
+          "name": "Dima Ustinov",
+          "artist_id": "artist::Dima Ustinov"
+        }
+      ]
     },
     {
       "id": "project::Set Design",
       "label": "Set Design",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "Our set design team will be with us throughout the lab, helping transform each venue into a festival space. Feel free to reach out to them if you need help with your project, installation, or spatial setup.",
+      "curators": [
+        {
+          "name": "Daria Sadovnikova",
+          "artist_id": "artist::Daria Sadovnikova"
+        },
+        {
+          "name": "Karina Malik",
+          "artist_id": "artist::Karina Malik"
+        },
+        {
+          "name": "Aleksei Leontev",
+          "artist_id": "artist::Aleksei Leontev"
+        },
+        {
+          "name": "Yurii Avdeev",
+          "artist_id": "artist::Yurii Avdeev"
+        }
+      ]
     },
     {
       "id": "project::Somatic Practices",
       "label": "Somatic Practices",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project explores embodiment, ritual, presence, and collective practices through performance, dance, choreography, movement research, theater, sound-and-body practices, and interdisciplinary artistic approaches.",
+      "curators": [
+        {
+          "name": "Tanya Chizhikova",
+          "artist_id": "artist::Tanya Chizhikova"
+        }
+      ]
     },
     {
       "id": "project::The Refrain",
       "label": "The Refrain",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project explores the idea of rituals through classical instruments, composition, conducting, electro-acoustic music, experimental performance, and other forms of expression discovered along the way.",
+      "curators": [
+        {
+          "name": "Aram Hovhannisyan",
+          "artist_id": "artist::Aram Hovhannisyan"
+        },
+        {
+          "name": "Sergey Umroyan",
+          "artist_id": "artist::Sergey Umroyan"
+        }
+      ]
     },
     {
       "id": "project::Video Art",
       "label": "Video Art",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "The project brings together artists working with moving image, film, animation, archives, and audiovisual storytelling, presenting new visual works and experiments throughout the festival.",
+      "curators": [
+        {
+          "name": "Gevorg Grigoryan",
+          "artist_id": "artist::Gevorg Grigoryan"
+        }
+      ]
     },
     {
       "id": "project::Zine Art",
       "label": "Zine Art",
       "group": "project",
-      "color": "#FFE2C4"
+      "color": "#FFE2C4",
+      "description": "A unique zine will be produced during the laboratory: if you love working with texts, taking interviews, translating, researching or if you have a nice essay or article written about rituals, folk culture, collaborative practices — we might find a role for you!",
+      "curators": [
+        {
+          "name": "Arthur Atayan",
+          "artist_id": "artist::Arthur Atayan"
+        }
+      ]
     },
     {
       "id": "discipline::Acting",
