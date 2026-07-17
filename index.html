@@ -342,6 +342,15 @@
       font-weight: 500;
     }
 
+    .filters-popup *,
+    #filters-btn,
+    #reset-filters,
+    #show-all,
+    .show-all,
+    .features-switch {
+      font-family: 'Lexend', sans-serif;
+    }
+
     .filters-popup.active {
       display: block;
     }
@@ -438,13 +447,16 @@
     .filter-tag:hover,
     .filter-tag:focus,
     .filter-tag:active {
-      background-color: var(--accent);
-      color: var(--muted);
+      background-color: var(--muted);
+      color: var(--page-text);
       border: none;
       outline: none;
     }
 
-    .filter-tag.active {
+    .filter-tag.active,
+    .filter-tag.active:hover,
+    .filter-tag.active:focus,
+    .filter-tag.active:active {
       background-color: var(--accent);
       color: var(--muted);
       border: none;
